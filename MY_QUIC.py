@@ -281,33 +281,33 @@ class MY_QUIC:
 
         return totalBytesSentData
 
-    def receiveData(self, max_bytes: int = MAX_RECEIVE_BYTES):
+    def receiveData(self, maxBytes: int = MAX_RECEIVE_BYTES):
         """
         Receive data from a client and send acknowledgment.
         """
         # Receive data from any client
-        received_data, sender_address = self.socket.recvfrom(MAX_RECEIVE_BYTES)
-        connection = self.getOrCreateConnection(sender_address)
+        receivedData, senderAddress = self.socket.recvfrom(MAX_RECEIVE_BYTES)
+        connection = self.getOrCreateConnection(senderAddress)
 
         # Deserialize the packet header
-        header = PacketHeader.deserialize(received_data[:self.headerSize])
+        header = PacketHeader.deserialize(receivedData[:self.headerSize])
         pointer = self.headerSize
-        received_objects = {}
-        total_object_bytes = 0
+        receivedObjects = {}
+        totalObjectBytes = 0
 
         if header.type == SHORT_PACKET:
             connection.receivedPackets += 1
-            ack_payload = b""
+            ackPayload = b""
 
             # Process each frame in the received packet
-            while len(received_data) - pointer >= self.frameSize:
-                frame = Frame.deserialize(received_data[pointer:pointer + self.frameSize])
+            while len(receivedData) - pointer >= self.frameSize:
+                frame = Frame.deserialize(receivedData[pointer:pointer + self.frameSize])
                 pointer += self.frameSize
 
                 # Extract data for this frame
-                data = received_data[pointer:pointer + frame.length]
+                data = receivedData[pointer:pointer + frame.length]
                 pointer += frame.length
-                total_object_bytes += frame.length
+                totalObjectBytes += frame.length
 
                 # Initialize byte count for new streams
                 if frame.streamId not in connection.streamBytesReceived:
@@ -324,18 +324,18 @@ class MY_QUIC:
                 # Prepare ACK frame
                 frame.length = 0
                 frame.type = ACK_FRAME
-                ack_payload += frame.serialize()
+                ackPayload += frame.serialize()
 
                 # Store received data if within size limit
-                if total_object_bytes <= max_bytes:
-                    received_objects[frame.streamId] = data
+                if totalObjectBytes <= maxBytes:
+                    receivedObjects[frame.streamId] = data
 
             # Send acknowledgment back to the sender
-            ack_header = PacketHeader(ACK_FRAME, header.number)
+            ackHeader = PacketHeader(ACK_FRAME, header.number)
             connection.sentPackets += 1
-            self.socket.sendto(ack_header.serialize() + ack_payload, sender_address)
+            self.socket.sendto(ackHeader.serialize() + ackPayload, senderAddress)
 
-        return sender_address, received_objects
+        return senderAddress, receivedObjects
 
     def close(self):
         self.socket.close()
