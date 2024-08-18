@@ -10,39 +10,39 @@ def main():
     if len(sys.argv) != 2 or not sys.argv[1].isdigit() or int(sys.argv[1]) > 10:
         print("ERROR: Please enter a number between 1-10 (for the number of files to send)")
         return
-    numFiles = int(sys.argv[1])  # Number of file requests to send
+    numOfFiles = int(sys.argv[1])
 
     # Generate random stream-object pairs
-    streamNumber = list(range(10))  # Create a list of stream numbers from 0 to 9
-    fileNumber = list(range(10))    # Create a list of file numbers from 0 to 9
-    random.shuffle(streamNumber)    # Shuffle the stream numbers
-    random.shuffle(fileNumber)      # Shuffle the file numbers
+    streamNumber = list(range(10))  # A list of stream numbers from 0 to 9
+    fileNumber = list(range(10))    # A list of file numbers
+    random.shuffle(streamNumber)
+    random.shuffle(fileNumber)
     # Create pairs of (stream number, file number) for the number of files requested
-    pairs = [(streamNumber[i], fileNumber[i]) for i in range(numFiles)]
+    pairs = [(streamNumber[i], fileNumber[i]) for i in range(numOfFiles)]
     # Create a request string in the format "stream:file stream:file ..."
     requestStr = " ".join([f"{pair[0]}:{pair[1]}" for pair in pairs])
 
     # Set up MY_QUIC client
     print("Client starting...")
-    client = MY_QUIC.MY_QUIC()  # Initialize the MY_QUIC client
+    client = MY_QUIC.MY_QUIC()
     serverAddress = ('localhost', 9999)  # Server address and port
 
     # Send request to the server
     requestStreamId = 18  # Dedicated stream ID for sending requests
-    myRequest = {requestStreamId: requestStr.encode()}  # Encode the request string
+    myRequest = {requestStreamId: requestStr.encode()}
     print(f"Sending request: {requestStr}")
-    client.sendData(serverAddress, myRequest)  # Send the request to the server
+    client.sendData(serverAddress, myRequest)
 
     # Prepare to receive response data
     responseData = {int(pair[0]): b"" for pair in pairs}  # Initialize empty byte strings for each requested stream
     responseData[81] = b""  # Stream 81 is used for server acknowledgement
     print("Waiting for data...\n")
-    packetsReceived = 0  # Counter for received packets
+    packetsReceived = 0
 
     # Receive and accumulate data from the server
     print("Receiving data...")
-    while responseData[81] != b"fin":  # Continue receiving until the server sends the "fin" message
-        _, response = client.receiveData(65536)  # Receive data (max 65536 bytes per packet)
+    while responseData[81] != b"fin":
+        _, response = client.receiveData(65536)
         packetsReceived += 1
         for streamId, data in response.items():
             responseData[streamId] += data  # Accumulate data for each stream
@@ -51,7 +51,7 @@ def main():
     print(f"Total packets received: {packetsReceived}")
 
     # Print the received data details
-    del responseData[81]  # Remove the acknowledgment stream from the results
+    del responseData[81]
     for i, (streamId, data) in enumerate(responseData.items()):
         objectNumber = pairs[i][1]  # Get the corresponding object number for this stream
         print(f"Stream: {streamId}, Object number: {objectNumber}, Object size: {len(data)} bytes")

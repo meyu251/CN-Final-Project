@@ -18,9 +18,6 @@ MAX_STREAM_SIZE = 2000
 MIN_STREAM_SIZE = 1000
 
 class PacketHeader:
-    """
-    Represents the header of a packet.
-    """
     HEADER_FORMAT = "!BI"  # Format for packing/unpacking the header: unsigned char, unsigned int
 
     def __init__(self, packetType: int, packetNumber: int):
