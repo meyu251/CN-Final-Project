@@ -263,21 +263,21 @@ class MY_QUIC:
 
         # Print statistics if significant data was sent
         if frames[0].offset > 50:
-            print("\n-------------------------------------- STATES --------------------------------------")
-            print("\n(a)+(b)+(c): Streams info")
+            print("\nSTATISTICS:")
+            print("\nStreams details:")
             for flow in frames:
                 streamId = flow.streamId
                 streamSize = streamSizes[streamId]
                 totalBytes = flow.offset
                 totalBytesSentData += totalBytes
                 streamFrames = math.ceil(totalBytes // streamSize)
-                print(f"Stream: {streamId}, Size: {streamSize} bytes, Sent: {totalBytes} bytes, "
+                print(f"Stream: {streamId}, Size: {streamSize} bytes, Sent: {totalBytes} bytes, Sent in {streamFrames} different packets, "
                       f"Pace: {(totalBytes/streamsDurations[streamId]):.2f} B/s, "
                       f"{(streamFrames/streamsDurations[streamId]):.2f} Packets/s")
 
-            print("\n(d)+(e): Connection info:")
+            print("\nGeneral details:")
             print(f"Data pace: {(totalBytesSentData/maxStreamTime):.2f} B/s, {(connection.sentPackets / maxStreamTime):.2f} Packets/s")
-            print("\n------------------------------------------------------------------------------------\n")
+            print("\n")
 
         return totalBytesSentData
 

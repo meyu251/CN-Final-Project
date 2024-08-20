@@ -25,7 +25,7 @@ def main():
     # Set up MY_QUIC client
     print("Client starting...")
     client = MY_QUIC.MY_QUIC()
-    serverAddress = ('localhost', 9999)  # Server address and port
+    serverAddress = ('localhost', 1212)  # Server address and port
 
     # Send request to the server
     requestStreamId = 18  # Dedicated stream ID for sending requests

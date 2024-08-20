@@ -22,7 +22,7 @@ def main():
 
     print("Starting server...")
     server = MY_QUIC.MY_QUIC()
-    serverAddress = ('localhost', 9999)  # Server address and port
+    serverAddress = ('localhost', 1212)  # Server address and port
     server.bind(serverAddress)  # Bind the server to the address
     print("Server is ready!")
 
@@ -53,8 +53,7 @@ def main():
         print("Sending finish message")
         server.sendData(clientAddress, {81: b"fin"})
 
-        if input("Receive another request?\n(1 - no, 2 - yes): ") != "2":
-            break
+        break
 
     server.close()
     print("Server shutdown!")
