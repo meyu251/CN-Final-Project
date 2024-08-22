@@ -110,12 +110,12 @@ class MyQUIC:
         # Initialize UDP socket for communication
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # Calculate sizes of header and frame for later use in serialization/deserialization
-        self.headerSize = len(PacketHeader(SHORT_PACKET, 2).serialize())
-        self.frameSize = len(Frame(5, DATA_FRAME, 6, 7).serialize())
-        self.sentPackets = 0
-        self.receivedPackets = 0
+        self.header_size = len(PacketHeader(SHORT_PACKET, 2).serialize())
+        self.frame_size = len(Frame(5, DATA_FRAME, 6, 7).serialize())
+        self.sent_packets = 0
+        self.received_packets = 0
         self.stream_bytes_received = {}
-        self.streamBytesSent = {}
+        self.stream_bytes_sent = {}
 
     def bind(self, server_address):
         self.socket.bind(server_address)
@@ -141,8 +141,8 @@ class MyQUIC:
             frames.append(frame)
             frames_to_send.append(frame)
             # Initialize sent bytes count for this stream if not already present
-            if stream_id not in self.streamBytesSent:
-                self.streamBytesSent[stream_id] = 0
+            if stream_id not in self.stream_bytes_sent:
+                self.stream_bytes_sent[stream_id] = 0
             streams_durations[stream_id] = 0  # Initialize stream duration
 
         total_bytes_sent_udp = 0  # Total bytes sent over UDP
@@ -184,8 +184,8 @@ class MyQUIC:
                 break  # Exit if all frames have been sent
 
             # Create packet header
-            packet_header = PacketHeader(SHORT_PACKET, self.sentPackets)
-            self.sentPackets += 1
+            packet_header = PacketHeader(SHORT_PACKET, self.sent_packets)
+            self.sent_packets += 1
             packet_to_send = packet_header.serialize() + packet_payload
 
             # Record start time for the first packet of each stream
@@ -205,8 +205,8 @@ class MyQUIC:
                 break
 
             # Process received acknowledgment
-            received_header = PacketHeader.deserialize(received_data[:self.headerSize])
-            pointer = self.headerSize
+            received_header = PacketHeader.deserialize(received_data[:self.header_size])
+            pointer = self.header_size
 
             # Verify if the received ACK matches the sent packet
             if received_header.number != packet_header.number or received_header.type != ACK_FRAME:
@@ -214,16 +214,16 @@ class MyQUIC:
                 break
 
             # Process each frame in the ACK
-            while len(received_data) - pointer >= self.frameSize:
-                ack_frame = Frame.deserialize(received_data[pointer:pointer + self.frameSize])
-                pointer += self.frameSize
+            while len(received_data) - pointer >= self.frame_size:
+                ack_frame = Frame.deserialize(received_data[pointer:pointer + self.frame_size])
+                pointer += self.frame_size
 
                 if ack_frame.type == ACK_FRAME:
                     for sentFrame in frames_to_send:
                         if sentFrame.streamId == ack_frame.streamId:
                             # Update the offset for successfully sent data
                             sentFrame.offset = ack_frame.offset
-                            self.streamBytesSent[sentFrame.streamId] += sentFrame.length
+                            self.stream_bytes_sent[sentFrame.streamId] += sentFrame.length
 
                 pointer += ack_frame.length
 
@@ -244,7 +244,7 @@ class MyQUIC:
                       f"{(stream_frames/streams_durations[stream_id]):.2f} Packets/s")
 
             print("\nGeneral details:")
-            print(f"Data pace: {(total_bytes_sent_data/max_stream_time):.2f} B/s, {(self.sentPackets / max_stream_time):.2f} Packets/s")
+            print(f"Data pace: {(total_bytes_sent_data/max_stream_time):.2f} B/s, {(self.sent_packets / max_stream_time):.2f} Packets/s")
             print("\n")
 
         return total_bytes_sent_data
@@ -257,19 +257,19 @@ class MyQUIC:
         received_data, sender_address = self.socket.recvfrom(MAX_RECEIVE_BYTES)
 
         # Deserialize the packet header
-        header = PacketHeader.deserialize(received_data[:self.headerSize])
-        pointer = self.headerSize
+        header = PacketHeader.deserialize(received_data[:self.header_size])
+        pointer = self.header_size
         received_objects = {}
         total_object_bytes = 0
 
         if header.type == SHORT_PACKET:
-            self.receivedPackets += 1
+            self.received_packets += 1
             ack_payload = b""
 
             # Process each frame in the received packet
-            while len(received_data) - pointer >= self.frameSize:
-                frame = Frame.deserialize(received_data[pointer:pointer + self.frameSize])
-                pointer += self.frameSize
+            while len(received_data) - pointer >= self.frame_size:
+                frame = Frame.deserialize(received_data[pointer:pointer + self.frame_size])
+                pointer += self.frame_size
 
                 # Extract data for this frame
                 data = received_data[pointer:pointer + frame.length]
@@ -299,7 +299,7 @@ class MyQUIC:
 
             # Send acknowledgment back to the sender
             ack_header = PacketHeader(ACK_FRAME, header.number)
-            self.sentPackets += 1
+            self.sent_packets += 1
             self.socket.sendto(ack_header.serialize() + ack_payload, sender_address)
 
         return sender_address, received_objects

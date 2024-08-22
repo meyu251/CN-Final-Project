@@ -4,21 +4,19 @@ from time import sleep
 
 from MyQUIC import MyQUIC
 
-TEST_COUNTER = 3
-
+TEST_COUNTER = 4
 
 def myquic_echo_server():
     """
-    this function is used to create a threaded server that will receive data from the client and send it back.
-    the server will receive data for TEST_COUNTER times.
-    :return:
+    This function creates a threaded server that receives data from the client and echoes it back.
+    The server will process data for TEST_COUNTER times.
     """
     server_sock = MyQUIC()
     server_sock.bind(('localhost', 1212))
 
     for i in range(TEST_COUNTER):
         addr, data = server_sock.receive_data(65536)
-        if i == TEST_COUNTER - 1:  # in the last test we need two packets to be received because the frames limitation is 6 in each packet
+        if i == TEST_COUNTER - 1:  # In the last test, we need two packets due to the 6-frame limitation per packet
             addr, data_second = server_sock.receive_data(65536)
             first_key = next(iter(data_second))
             data[first_key] = data_second[first_key]
@@ -26,13 +24,11 @@ def myquic_echo_server():
 
     server_sock.close()
 
-
 class TestMyQUIC(unittest.TestCase):
     """
     This class contains tests for the MyQUIC class.
-    the first two test cases are for sending and receiving non-empty data in 1 and 2 streams.
-    the third test case is for sending and receiving non-empty data in 8 streams so that the server will receive 2 packets.
-    the last test case is for sending.
+    It includes tests for sending and receiving data with various stream counts,
+    as well as handling empty data transmission.
     """
 
     @classmethod
@@ -79,7 +75,6 @@ class TestMyQUIC(unittest.TestCase):
         data_to_send = {1: b''}
         bytes_sent = self.client_sock.send_data(self.server_address, data_to_send)
         self.assertEqual(bytes_sent, 0)
-
 
 if __name__ == '__main__':
     unittest.main()
